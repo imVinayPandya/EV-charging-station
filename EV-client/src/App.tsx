@@ -43,6 +43,9 @@ function App() {
   return (
     <div className="bg-gray-100 min-h-screen flex justify-center ">
       <div className="flex flex-col w-full max-w-6xl gap-16 py-16">
+        <h1 className="text-4xl font-bold text-center">
+          EV Charging Simulator
+        </h1>
         <SimulationForm
           onSubmit={handleSubmit}
           onReset={handleReset}

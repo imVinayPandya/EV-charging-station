@@ -1,12 +1,13 @@
-import express, { Request, Response } from "express";
+import Router from "express-promise-router";
+import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { simulationConfigSchema } from "../validations";
 import { numberSchema } from "../validations/simulationConfig";
 
-const router = express.Router();
+const router = Router();
 const prisma = new PrismaClient();
 
-router.post("/", async (req: any, res: any) => {
+router.post("/", async (req: Request, res: Response) => {
   const validation = simulationConfigSchema.safeParse(req.body);
   if (!validation.success) return res.status(400).json(validation.error);
 
@@ -14,26 +15,27 @@ router.post("/", async (req: any, res: any) => {
     data: validation.data,
   });
 
-  res.status(201).json(input);
+  return res.status(201).json(input);
 });
 
 router.get("/", async (_req: Request, res: Response) => {
   const inputs = await prisma.simulationConfig.findMany();
-  res.json(inputs);
+  return res.json(inputs);
 });
 
 router.get("/:id", async (req: Request, res: Response) => {
   const input = await prisma.simulationConfig.findUnique({
     where: { id: Number(req.params.id) },
   });
-  input ? res.json(input) : res.status(404).json({ error: "Not found" });
+  if (!input) return res.status(404).json({ error: "Not found" });
+
+  return res.json(input);
 });
 
 router.delete("/:id", async (req: Request, res: Response) => {
   const validation = numberSchema.safeParse(req.params.id);
   if (!validation.success) {
-    res.status(400).json(validation.error);
-    return;
+    return res.status(400).json(validation.error);
   }
 
   const simulationResult = await prisma.simulationResult.findFirst({
@@ -55,7 +57,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
     where: { id: validation.data },
   });
 
-  res.status(204).send();
+  return res.status(204).send();
 });
 
 export default router;

@@ -2,12 +2,13 @@ import express, { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import mockChargingEvents from "../helper/mockChargingEvents";
 import { numberSchema } from "../validations/simulationConfig";
+import logger from "../utils/logger";
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 // 📌 Mock Simulation Endpoint
-router.post("/:simulationConfigId", async (req: any, res: any) => {
+router.post("/:simulationConfigId", async (req: Request, res: Response) => {
   const validation = numberSchema.safeParse(req.params.simulationConfigId);
 
   if (!validation.success) {
@@ -48,7 +49,7 @@ router.post("/:simulationConfigId", async (req: any, res: any) => {
       data: chargingEvents,
     })
     .then(() => {
-      console.log(
+      logger.info(
         `🔥 ${result.id} has ${chargingEvents.length} charging events`
       );
     });
@@ -58,14 +59,15 @@ router.post("/:simulationConfigId", async (req: any, res: any) => {
 
 router.get("/", async (_req: Request, res: Response) => {
   const results = await prisma.simulationResult.findMany();
-  res.json(results);
+  return res.json(results);
 });
 
 router.get("/:id", async (req: Request, res: Response) => {
   const result = await prisma.simulationResult.findUnique({
     where: { id: Number(req.params.id) },
   });
-  result ? res.json(result) : res.status(404).json({ error: "Not found" });
+  if (!result) return res.status(404).json({ error: "Not found" });
+  return res.json(result);
 });
 
 router.get(
@@ -74,8 +76,7 @@ router.get(
     const validation = numberSchema.safeParse(req.params.simulationResultId);
 
     if (!validation.success) {
-      res.status(400).json({ error: "Invalid simulation result id" });
-      return;
+      return res.status(400).json({ error: "Invalid simulation result id" });
     }
 
     const simulationResultId = validation.data;
@@ -84,7 +85,7 @@ router.get(
       where: { simulationResultId: simulationResultId },
     });
 
-    res.json(chargingEvents);
+    return res.json(chargingEvents);
   }
 );
 
